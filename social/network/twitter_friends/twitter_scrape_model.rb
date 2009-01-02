@@ -3,16 +3,17 @@ require 'imw/chunk_store/cached_uri'
 require 'imw/chunk_store/scrape'
 class TwitterScrapeFile
   include ScrapeFile
-  attr_accessor :screen_name, :context, :page, :cached_uri
+  attr_accessor :screen_name, :twitter_id, :context, :page, :cached_uri
 
   #
   # Create from a screen_name, context and page number
   #
-  def initialize screen_name, context, page, timestamp=nil
+  def initialize screen_name, twitter_id, context, page
     self.screen_name = screen_name
+    self.twitter_id  = "%010d"%twitter_id.to_i
     self.context    = context
     self.page       = page
-    self.cached_uri = CachedUri.new(rip_uri, timestamp)
+    # self.cached_uri = CachedUri.new(rip_uri, timestamp)
   end
 
   #
@@ -24,7 +25,8 @@ class TwitterScrapeFile
 
   # Context <=> resource mapping
   RESOURCE_PATH_FROM_CONTEXT = {
-    :followers => 'statuses/followers', :friends => 'statuses/friends', :user => 'users/show'
+    :followers => 'statuses/followers', :friends => 'statuses/friends',
+    :user => 'users/show', :favorites => 'favorites',
   }
   # Get url resource for context
   def resource_path
@@ -39,11 +41,27 @@ class TwitterScrapeFile
   # CachedUri supplies the file path scheme
   #
   def file_path
-    cached_uri.file_path
+    # cached_uri.file_path
+    "_com/_tw/com.twitter/#{file_timestamp_dir_part}/#{resource_path}/#{screen_name}.json%3Fpage%3D#{page}+#{twitter_id}+#{file_timestamp_part}.json"
   end
 
+  # Encode the fragment part of the file path
+  #
+  # Note that +
+  def file_timestamp_part
+    timestamp ? timestamp.strftime("%Y%m%d%H%M%S") : ""
+  end
+  def file_timestamp_dir_part
+    timestamp ? timestamp.strftime("_%Y%m%d") : ""
+  end
+
+  def timestamp
+    @timestamp ||= Time.now
+  end
+
+
   # Regular expression to grok resource from uri
-  DOMAIN_RESOURCE_RE = %r{http://twitter.com/(\w+/\w+)/(\w+)\.json\?page=(\d+)}
+  DOMAIN_RESOURCE_RE = %r{http://twitter.com/([\w/]+)/(\w+)\.json\?page=(\d+)}
   #
   # create a scrape file for the given uri
   #
