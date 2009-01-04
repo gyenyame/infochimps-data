@@ -1,18 +1,19 @@
-
 require 'imw/chunk_store/cached_uri'
 require 'imw/chunk_store/scrape'
 class TwitterScrapeFile
   include ScrapeFile
-  attr_accessor :screen_name, :twitter_id, :context, :page, :cached_uri
+  attr_accessor :screen_name, :twitter_id, :context, :page, :count
 
   #
   # Create from a screen_name, context and page number
   #
-  def initialize screen_name, twitter_id, context, page
-    self.screen_name = screen_name
-    self.twitter_id  = "%010d"%twitter_id.to_i
-    self.context    = context
-    self.page       = page
+  def initialize screen_name, twitter_id, context, page, count=nil, since=nil
+    self.screen_name  = screen_name
+    self.twitter_id   = "%010d"%twitter_id.to_i
+    self.context      = context
+    self.page         = page
+    self.count        = count
+    # self.since        = since
     # self.cached_uri = CachedUri.new(rip_uri, timestamp)
   end
 
@@ -20,13 +21,19 @@ class TwitterScrapeFile
   # The URL for a given resource
   #
   def rip_uri
-    "http://twitter.com/#{resource_path}/#{screen_name}.json?page=#{page}"
+    uri = "http://twitter.com/#{resource_path}/#{screen_name}.json?page=#{page}"
+    uri += "&count=#{count}" if count
+    # uri += "&since=#{since}" if since
+    uri
   end
 
   # Context <=> resource mapping
   RESOURCE_PATH_FROM_CONTEXT = {
-    :followers => 'statuses/followers', :friends => 'statuses/friends',
-    :user => 'users/show', :favorites => 'favorites',
+    :followers  => 'statuses/followers',
+    :friends    => 'statuses/friends',
+    :user       => 'users/show',
+    :favorites  => 'favorites',
+    :timeline   => 'statuses/user_timeline',
   }
   # Get url resource for context
   def resource_path
@@ -42,7 +49,12 @@ class TwitterScrapeFile
   #
   def file_path
     # cached_uri.file_path
-    "_com/_tw/com.twitter/#{file_timestamp_dir_part}/#{resource_path}/#{screen_name}.json%3Fpage%3D#{page}+#{twitter_id}+#{file_timestamp_part}.json"
+    filepath = [
+      "_com/_tw/com.twitter/#{file_timestamp_dir_part}/#{resource_path}/",
+      "#{screen_name}.json%3Fpage%3D#{page}",
+      ("%26count%3D#{count}" if count),
+      "+#{twitter_id}+#{file_timestamp_part}.json"
+      ].compact.join("")
   end
 
   # Encode the fragment part of the file path

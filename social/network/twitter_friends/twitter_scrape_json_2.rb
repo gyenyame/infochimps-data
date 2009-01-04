@@ -36,21 +36,23 @@ end
 # Flat list of usernames (in first column)
 #
 #
-USERNAMES_FILE = 'rawd/scrape_requests/scrape_request-followers-20081227_a'
+# USERNAMES_FILE = 'rawd/scrape_requests/scrape_request-followers-20081227_a'
+USERNAMES_FILE = 'fixd/dump/india_ids.tsv'
 File.open(USERNAMES_FILE) do |f|
   i = 0
   f.each do |line|
     line.chomp!
-    _, context, priority, id, page, screen_name, *_ = line.split(/\t/);
-    context = 'favorites'
+    id, screen_name, *_ = line.split(/\t/);
+    context = 'timeline'; page=1; count=200
+    screen_name = id
     i += 1; $stderr.puts "%s\t%7i\t%s"%[Time.now, i, screen_name] if (i % 10000 == 0)
     #
     # find file
     #
-    scrape_file = TwitterScrapeFile.new(screen_name, id, context, page)
+    scrape_file = TwitterScrapeFile.new(screen_name, id, context, page, count)
     scrape_file.exists?
     success = scrape_file.wget :http_user => TWITTER_USERNAME, :http_passwd => TWITTER_PASSWD,
-      :sleep_time => 0, :log_level => Logger::DEBUG
+      :sleep_time => 0.5, :log_level => Logger::DEBUG
     # warn "No yuo on #{screen_name} #{context} #{page}: #{scrape_file.result_status}" unless success
   end
 end
