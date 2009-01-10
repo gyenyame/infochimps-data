@@ -53,7 +53,7 @@ class TwitterScrapeFile
       "_com/_tw/com.twitter/#{file_timestamp_dir_part}/#{resource_path}/",
       "#{screen_name}.json%3Fpage%3D#{page}",
       ("%26count%3D#{count}" if count),
-      "+#{twitter_id}+#{file_timestamp_part}.json"
+      "+u#{twitter_id}+d#{file_timestamp_part}.json"
       ].compact.join("")
   end
 
@@ -64,7 +64,7 @@ class TwitterScrapeFile
     timestamp ? timestamp.strftime("%Y%m%d%H%M%S") : ""
   end
   def file_timestamp_dir_part
-    timestamp ? timestamp.strftime("_%Y%m%d") : ""
+    timestamp ? timestamp.strftime("_%Y%m%d/_%H") : ""
   end
 
   def timestamp
